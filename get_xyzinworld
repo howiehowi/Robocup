@@ -1,0 +1,65 @@
+import cv2
+import numpy as np
+
+
+# 读取深度图像
+I_depth = cv2.imread('depthImg.png', cv2.IMREAD_UNCHANGED)
+width, height = 640, 480
+I_depth = cv2.resize(I_depth, (width, height), interpolation=cv2.INTER_CUBIC)
+
+# 相机内参
+fx = 554.3827128226441  # 焦距x
+fy = 554.3827128226441  # 焦距y
+cx = 320.5  # 光心x
+cy = 240.5  # 光心y
+K = np.array([[fx, 0, cx],
+              [0, fy, cy],
+              [0, 0, 1]])  # 内参矩阵
+
+# 假设的4x4外参矩阵
+#RT = np.array([[ 1.33288233e-02, -5.05651081e-05 , 9.99911166e-01 , 3.55671722e-01],
+# [-2.15192344e-04  ,9.99999975e-01 , 5.34381147e-05 , 8.22560024e-05],
+# [-9.99911144e-01 ,-2.15885495e-04 , 1.33288121e-02 , 5.91125194e-01],
+# [ 0.00000000e+00 , 0.00000000e+00,  0.00000000e+00 , 1.00000000e+00]])
+
+RT = np.array([[6.02931302e-05, - 9.99900266e-01 , 1.41228220e-02,  3.55673542e-01],
+ [-9.99999834e-01 ,- 5.21858109e-05 , 5.74425848e-04 , 8.55465056e-05],
+[-5.73631547e-04, - 1.41228543e-02, - 9.99900103e-01, 5.91123580e-01],
+[0.00000000e+00 , 0.00000000e+00 , 0.00000000e+00 , 1.00000000e+00]])
+
+# 像素坐标(u, v)和深度值
+u = 191
+v = 69
+
+# 如果深度图像是单通道的，直接获取深度值
+depth_value = I_depth[v, u,1]
+
+# 如果深度图像有多个通道，确保从正确的通道获取深度值
+# depth_value = I_depth[v, u, channel_index]  # 你需要替换 channel_index 为正确的通道索引
+
+# 将深度像素值转换为浮点数
+depth_value = depth_value.astype(float)
+
+
+# 深度缩放因子
+#depth_scale = 0.0027  # 假设1像素值对应0.001米
+
+depth_scale_factor1=0.0036
+depth_scale_factor2=0.1339
+Z =  (depth_value * depth_scale_factor1)+depth_scale_factor2
+# 将像素值转换为实际深度
+
+
+
+# 将像素坐标(u, v)转换为齐次相机坐标系下的坐标(X, Y, Z, 1)
+X = (u - cx) * Z / fx
+Y = (v - cy) * Z / fy
+point_camera_homogeneous = np.array([X, Y, Z, 1])
+
+# 使用4x4的外参矩阵将相机坐标系下的点转换到世界坐标系下
+point_world_homogeneous = RT @ point_camera_homogeneous
+
+# 齐次坐标转换为笛卡尔坐标
+point_world = point_world_homogeneous[:3] / point_world_homogeneous[3]
+
+print("世界坐标系下（{0},{1}）的点(X_w, Y_w, Z_w): {2}".format(u, v, point_world))
