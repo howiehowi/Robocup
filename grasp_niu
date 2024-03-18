@@ -1,0 +1,49 @@
+#!/usr/bin/env python
+
+import rospy
+from geometrymsgs.msg import PoseStamped
+from frankagripper.msg import MoveAction, MoveGoal
+import actionlib
+
+def moverobotand_open_gripper():
+    rospy.init_node('robot_mover', anonymous=True)
+    rate = rospy.Rate(10)  # 10Hz
+
+    # Create a publisher for the equilibrium pose
+    pose_publisher = rospy.Publisher('/cartesian_impedance_example_controller/equilibrium_pose', PoseStamped, queue_size=10)
+
+    # Create an action client for the gripper move action server
+    gripper_client = actionlib.SimpleActionClient('/franka_gripper/move', MoveAction)
+    gripper_client.wait_for_server()
+
+    while not rospy.is_shutdown():
+        # Create a PoseStamped message with the desired pose
+        pose_msg = PoseStamped()
+        # Fill in the desired pose information (position and orientation)
+        pose_msg.pose.position.x = -0.10706865088357108 - (-0.09999979186341307)  # Desired x position
+        pose_msg.pose.position.y = 0.3627628487980877 - (2.3745601985489815e-07) # Desired y position
+        pose_msg.pose.position.z = 0.6819176787096775 - (0.6150208540388477) # Desired z position
+        pose_msg.pose.orientation.x = -3.14  # Desired x orientation
+        pose_msg.pose.orientation.y = -0.01  # Desired y orientation
+        pose_msg.pose.orientation.z = 0.0  # Desired z orientation
+       # pose_msg.pose.orientation.w = 1  # Desired w orientation
+
+        # Publish the pose message
+        pose_publisher.publish(pose_msg)
+
+        # Create a MoveGoal message with the desired gripper width and speed
+        gripper_goal = MoveGoal()
+        gripper_goal.width = 0.09  # Desired gripper width
+        gripper_goal.speed = 0.1  # Desired gripper speed
+
+        # Send the gripper move action goal
+        gripper_client.send_goal(gripper_goal)
+        gripper_client.wait_for_result()
+
+        rate.sleep()
+
+if _name == '_main':
+    try:
+        move_robot_and_open_gripper()
+    except rospy.ROSInterruptException:
+        pass
