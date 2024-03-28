@@ -1,0 +1,70 @@
+from ultralytics import YOLO
+import os
+from PIL import Image
+import torch
+import cv2
+import numpy as np
+
+
+
+import cv2
+import numpy as np
+
+
+I_depth = cv2.imread('depthimg_0315.png', cv2.IMREAD_UNCHANGED)
+width, height = 640, 480
+I_depth = cv2.resize(I_depth, (width, height), interpolation=cv2.INTER_NEAREST)
+cv2.imshow('resized_I_depth1',I_depth)
+
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+
+resized_depth_image_path = 'resized_depth_image.png'
+cv2.imwrite(resized_depth_image_path, I_depth)
+
+
+
+
+fx = 554.3827128226441
+fy = 554.3827128226441
+cx = 320.5
+cy = 240.5
+K = np.array([[fx, 0, cx],
+              [0, fy, cy],
+              [0, 0, 1]])
+
+
+RT = np.array([[6.02931302e-05, - 9.99900266e-01 , 1.41228220e-02,  3.55673542e-01],
+ [-9.99999834e-01 ,- 5.21858109e-05 , 5.74425848e-04 , 8.55465056e-05],
+[-5.73631547e-04, - 1.41228543e-02, - 9.99900103e-01, 5.91123580e-01],
+[0.00000000e+00 , 0.00000000e+00 , 0.00000000e+00 , 1.00000000e+00]])
+
+u = 340
+v = 274
+
+
+depth_value = I_depth[v, u,1]
+
+
+depth_value = depth_value.astype(float)
+
+
+depth_scale_factor1=0.0036
+depth_scale_factor2=0.1339
+Z =  (depth_value * depth_scale_factor1)+depth_scale_factor2
+
+
+X = (u - cx) * Z / fx
+Y = (v - cy) * Z / fy
+point_camera_homogeneous = np.array([X, Y, Z, 1])
+
+
+point_world_homogeneous = RT @ point_camera_homogeneous
+
+
+point_world = point_world_homogeneous[:3] / point_world_homogeneous[3]
+
+print("In world frame（{0},{1}）(X_w, Y_w, Z_w): {2}".format(u, v, point_world))
+# middle cube True coordinate(281,69): x: 0.5219999999700906 y: 0.04199999970788181  z=-0.0411  z: 0.5239998530509272
+# right cube True coordinate(353,69): x: 0.5209999999726885    y: -0.031000000308039503  z=-0.041  z: 0.5239998530509272\
+print(point_world[0])
