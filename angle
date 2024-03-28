@@ -1,0 +1,11 @@
+import math
+def find_perpendicular_angle(A):
+    A_perpendicular = A + math.pi / 2
+    A_perpendicular = A_perpendicular % (2 * math.pi)
+    return A_perpendicular
+
+A = math.pi / 4  
+A_perpendicular = find_perpendicular_angle(A)
+A_perpendicular_degrees = 360 * (A_perpendicular / (2 * math.pi))
+print("angle：", A_perpendicular)
+print("angle：", A_perpendicular_degrees)
